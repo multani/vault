@@ -28,8 +28,11 @@ examples of OIDC and JWT usage.
 This section covers the setup and use of OIDC roles. If a JWT is to be provided directly,
 refer to the [JWT Authentication](/docs/auth/jwt#jwt-authentication) section below. Basic
 familiarity with [OIDC concepts](https://developer.okta.com/blog/2017/07/25/oidc-primer-part-1)
-is assumed. The Authorization Code flow makes use of the Proof Key for Code
-Exchange (PKCE) extension.
+is assumed.
+
+The [Authorization Code flow](https://datatracker.ietf.org/doc/html/rfc6749#section-4.1) makes
+use of the [Proof Key for Code Exchange (PKCE)](https://datatracker.ietf.org/doc/html/rfc7636)
+extension.
 
 Vault includes two built-in OIDC login flows: the Vault UI, and the CLI
 using a `vault login`.
@@ -44,10 +47,10 @@ be set up depending on the installation.
 
 **CLI**
 
-If you plan to support authentication via `vault login -method=oidc`, a localhost redirect URI
+If you plan to support authentication via `vault login -method=oidc`, a `localhost` redirect URI
 must be set. This can usually be: `http://localhost:8250/oidc/callback`. Logins via the CLI may
 specify a different host and/or listening port if needed, and a URI with this host/port must match one
-of the configured redirected URIs. These same "localhost" URIs must be added to the provider as well.
+of the configured redirected URIs. These same `localhost` URIs must be added to the provider as well.
 
 **Vault UI**
 
@@ -55,8 +58,8 @@ Logging in via the Vault UI requires a redirect URI of the form:
 
 `https://{host:port}/ui/vault/auth/{path}/oidc/callback`
 
-The "host:port" must be correct for the Vault server, and "path" must match the path the JWT
-backend is mounted at (e.g. "oidc" or "jwt").
+The `host:port` must be correct for the Vault server, and `path` must match the path the JWT
+backend is mounted at (e.g. `oidc` or `jwt`).
 
 If the [oidc_response_mode](/api-docs/auth/jwt#oidc_response_mode) is set to `form_post`, then
 logging in via the Vault UI requires a redirect URI of the form:
@@ -95,16 +98,16 @@ Complete the login via your OIDC provider. Launching browser to:
 The browser will open to the generated URL to complete the provider's login. The
 URL may be entered manually if the browser cannot be automatically opened.
 
-- `skip_browser` (default: "false"). Toggle the automatic launching of the default browser to the login URL.
+- `skip_browser` (default: `false`). Toggle the automatic launching of the default browser to the login URL.
 
 The callback listener may be customized with the following optional parameters. These are typically
 not required to be set:
 
-- `mount` (default: "oidc")
-- `listenaddress` (default: "localhost")
-- `port` (default: 8250)
-- `callbackhost` (default: "localhost")
-- `callbackmethod` (default: "http")
+- `mount` (default: `oidc`)
+- `listenaddress` (default: `localhost`)
+- `port` (default: `8250`)
+- `callbackhost` (default: `localhost`)
+- `callbackmethod` (default: `http`)
 - `callbackport` (default: value set for `port`). This value is used in the `redirect_uri`, whereas
   `port` is the localhost port that the listener is using. These two may be different in advanced setups.
 
@@ -124,8 +127,8 @@ why things aren't working. Some tips for setting up OIDC:
   the Vault CLI. In these cases the best approach is to write the entire configuration as a single
   JSON object:
 
-```text
-vault write auth/oidc/role/demo -<<EOF
+```shell-session
+$ vault write auth/oidc/role/demo -<<EOF
 {
   "user_claim": "sub",
   "bound_audiences": "abc123",
@@ -145,14 +148,16 @@ EOF
 - `bound_audiences` is optional for OIDC roles and typically not required. OIDC providers will use
   the client_id as the audience and OIDC validation expects this.
 - Check your provider for what scopes are required in order to receive all
-  of the information you need. The scopes "profile" and "groups" often need to be
+  of the information you need. The scopes `profile` and `groups` often need to be
   requested, and can be added by setting `oidc_scopes="profile,groups"` on the role.
 - If you're seeing claim-related errors in logs, review the provider's docs very carefully to see
   how they're naming and structuring their claims. Depending on the provider, you may be able to
   construct a simple `curl` implicit grant request to obtain a JWT that you can inspect. An example
-  of how to decode the JWT (in this case located in the "access_token" field of a JSON response):
+  of how to decode the JWT (in this case located in the `access_token` field of a JSON response):
 
-  `cat jwt.json | jq -r .access_token | cut -d. -f2 | base64 -D`
+  ```shell-session
+  $ cat jwt.json | jq -r .access_token | cut -d. -f2 | base64 -D
+  ```
 
 - As of Vault 1.2, the [`verbose_oidc_logging`](/api/auth/jwt#verbose_oidc_logging) role
   option is available which will log the received OIDC token to the _server_ logs if debug-level logging is enabled. This can
@@ -165,7 +170,7 @@ EOF
 
 ## JWT Authentication
 
-The authentication flow for roles of type "jwt" is simpler than OIDC since Vault
+The authentication flow for roles of type `jwt` is simpler than OIDC since Vault
 only needs to validate the provided JWT.
 
 ### JWT Verification
@@ -175,7 +180,7 @@ three different ways, though only one method may be configured for a single back
 
 - **Static Keys**. A set of public keys is stored directly in the backend configuration.
 
-- **JWKS**. A JSON Web Key Set ([JWKS](https://tools.ietf.org/html/rfc7517)) URL (and optional
+- **JWKS**. A [JSON Web Key Set (JWKS)](https://tools.ietf.org/html/rfc7517) URL (and optional
   certificate chain) is configured. Keys will be fetched from this endpoint during authentication.
 
 - **OIDC Discovery**. An OIDC Discovery URL (and optional certificate chain) is configured. Keys
@@ -229,12 +234,14 @@ Auth methods must be configured in advance before users or machines can
 authenticate. These steps are usually completed by an operator or configuration
 management tool.
 
-1.  Enable the JWT auth method. Either the "jwt" or "oidc" name may be used. The
+1.  Enable the JWT auth method. Either the `jwt` or `oidc` name may be used. The
     backend will be mounted at the chosen name.
 
-    ```text
+    ```shell-session
     $ vault auth enable jwt
-      or
+    ```
+    or
+    ```shell-session
     $ vault auth enable oidc
     ```
 
@@ -242,7 +249,7 @@ management tool.
     Discovery URL must be present. For OIDC roles, OIDC Discovery URL, OIDC Client ID and OIDC Client Secret are required. For the
     list of available configuration options, please see the [API documentation](/api/auth/jwt).
 
-    ```text
+    ```shell-session
     $ vault write auth/jwt/config \
         oidc_discovery_url="https://myco.auth0.com/" \
         oidc_client_id="m5i8bj3iofytj" \
@@ -252,8 +259,8 @@ management tool.
 
 1.  Create a named role:
 
-    ```text
-    vault write auth/jwt/role/demo \
+    ```shell-session
+    $ vault write auth/jwt/role/demo \
         allowed_redirect_uris="http://localhost:8250/oidc/callback" \
         bound_subject="r3qX9DljwFIWhsiqwFiu38209F10atW6@clients" \
         bound_audiences="https://vault.plugin.auth.jwt.test" \
@@ -287,8 +294,8 @@ to:
 }
 ```
 
-Only JWTs containing both the "division" and "department" claims, and
-respective matching values of "Europe" and "Engineering", would be authorized.
+Only JWTs containing both the `division` and `department` claims, and
+respective matching values of `Europe` and `Engineering`, would be authorized.
 If the expected value is a list, the claim must match one of the items in the list.
 To limit authorization to a set of email addresses:
 
@@ -313,11 +320,11 @@ parameter is a map of items to copy. The map elements are of the form: `"<JWT cl
 }
 ```
 
-This specifies that the value in the JWT claim "division" should be copied to the metadata key "organization". The JWT
-"department" claim value will also be copied into metadata but will retain the key name. If a claim is configured in `claim_mappings`,
+This specifies that the value in the JWT claim `division` should be copied to the metadata key `organization`. The JWT
+`department` claim value will also be copied into metadata but will retain the key name. If a claim is configured in `claim_mappings`,
 it must existing in the JWT or else the authentication will fail.
 
-Note: the metadata key name "role" is reserved and may not be used for claim mappings.
+Note: the metadata key name `role` is reserved and may not be used for claim mappings.
 
 ### Claim Specifications and JSON Pointer
 
@@ -337,12 +344,11 @@ Assume the following JSON data to be referenced:
 }
 ```
 
-A parameter of `"division"` will reference "North America", as this is a top level key. A parameter
+A parameter of `"division"` will reference `North America`, as this is a top level key. A parameter
 `"/groups/primary"` uses JSON Pointer syntax to reference "Engineering" at a lower level. Any valid
 JSON Pointer can be used as a selector. Refer to the
 [JSON Pointer RFC](https://tools.ietf.org/html/rfc6901) for a full description of the syntax.
 
 ## API
 
-The JWT Auth Plugin has a full HTTP API. Please see the
-[API docs](/api/auth/jwt) for more details.
+The JWT Auth Plugin has a full HTTP API. Please see the [API docs](/api/auth/jwt) for more details.
